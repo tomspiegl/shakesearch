@@ -33,7 +33,13 @@ You will see the following improvements:
 
 ### Indexer
 
-[Index](./index.go) is an inverted map based alogorithm for fast full-text search based on tokens.
+[Index](./index.go) is an inverted map based alogorithm for fast full-text search based on tokens. The index holds a list of word references for each token. 
+
+Documents are indexed on startup of the application. The Index then provides two different query methods: 
+* Query(searchTerm string) []QueryDocument
+* QueryConcurrent(searchTerm string) []QueryDocument
+
+The concurrent query method splits the search term to multiple tokens. A concurrent lookup for each token is executed in different threads using goroutines.
 
 The Index analyses documents as follows:
 1. tokenize documents (extract words)
