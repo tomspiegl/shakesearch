@@ -34,10 +34,10 @@ type DocumentStore struct {
 	documentsById map[string]Document
 }
 
-func (store *DocumentStore) all() []Document {
+func (store *DocumentStore) All() []Document {
 	return store.documents
 }
-func (store *DocumentStore) documentById(id string) (Document, error) {
+func (store *DocumentStore) DocumentById(id string) (Document, error) {
 	document, ok := store.documentsById[id]
 	if !ok {
 		return document, errors.New(fmt.Sprintf("Document with id '%s' not found.", id))

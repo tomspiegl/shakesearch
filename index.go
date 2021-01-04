@@ -38,25 +38,25 @@ import "sync"
 //
 //   3. sort (rank) search results
 //
-//      * sort by document text references in descsending order
+//      * sort by distinct token count desc
+//      * if token count is equal for given documents, sort by ref count desc
 //
-//   4. sort search results by rank
 
-func main() {
-
-	documents := ParseDocuments()
-
-	index := CreateIndex(documents)
-
-	queryDocuments := index.Query("Nile William")
-	for _, queryDocument := range queryDocuments {
-		fmt.Printf("Document found: %s %d\n", queryDocument.documentId, len(queryDocument.refs))
-	}
-	queryDocuments = index.QueryConcurrent("Nile William")
-	for _, queryDocument := range queryDocuments {
-		fmt.Printf("Document found: %s %d\n", queryDocument.documentId, len(queryDocument.refs))
-	}
-}
+//func x_main() {
+//
+//	documents := ParseDocuments()
+//
+//	index := CreateIndex(documents)
+//
+//	queryDocuments := index.Query("Nile William")
+//	for _, queryDocument := range queryDocuments {
+//		fmt.Printf("Document found: %s %d\n", queryDocument.documentId, len(queryDocument.refs))
+//	}
+//	queryDocuments = index.QueryConcurrent("Nile William")
+//	for _, queryDocument := range queryDocuments {
+//		fmt.Printf("Document found: %s %d\n", queryDocument.documentId, len(queryDocument.refs))
+//	}
+//}
 
 // Positional Token within text
 type Token struct {
@@ -68,6 +68,7 @@ type Token struct {
 // A reference within a document
 type DocRef struct {
 	documentId string
+	token      string
 	start      int
 	end        int
 }
@@ -76,11 +77,26 @@ type DocRef struct {
 type QueryDocument struct {
 	documentId string
 	refs       []WordRef
+	tokens     []string
+}
+
+func (qd *QueryDocument) setTokens() {
+	tokens := make([]string, 0, 10)
+	tokenMap := make(map[string]bool, 10)
+	for _, ref := range qd.refs {
+		_, ok := tokenMap[ref.token]
+		if !ok {
+			tokens = append(tokens, ref.token)
+			tokenMap[ref.token] = true
+		}
+	}
+	qd.tokens = tokens
 }
 
 // WordRef references a word within a Document's text
 // You may it for highlighting
 type WordRef struct {
+	token string
 	start int
 	end   int
 }
@@ -103,7 +119,7 @@ type filterFunc func(string) string
 
 // Index
 type Index struct {
-	tokenMap TokenMap
+	tokenMap *TokenMap
 }
 
 // Do query searchTerm concurrently within index
@@ -137,10 +153,8 @@ func (index *Index) QueryConcurrent(searchTerm string) []QueryDocument {
 		queryDocs = merge(queryDocs, asyncSearch.queryDocs)
 	}
 
-	// sort (rank)
-	sort.Slice(queryDocs, func(i, j int) bool {
-		return len(queryDocs[i].refs) > len(queryDocs[j].refs)
-	})
+	// rank / sort queryDocs
+	rankQueryDocuments(queryDocs)
 
 	return queryDocs
 }
@@ -175,7 +189,7 @@ func (index *Index) Query(searchTerm string) []QueryDocument {
 		handledTokenMap[searchToken.value] = true
 
 		// lookup token
-		docRefs := index.tokenMap[searchToken.value]
+		docRefs := (*index.tokenMap)[searchToken.value]
 		if len(docRefs) == 0 {
 			continue
 		}
@@ -191,12 +205,31 @@ func (index *Index) Query(searchTerm string) []QueryDocument {
 	// transform to QueryDocuments
 	queryDocs := queryDocument(resultDocRefs)
 
-	// sort (rank)
-	sort.Slice(queryDocs, func(i, j int) bool {
-		return len(queryDocs[i].refs) > len(queryDocs[j].refs)
-	})
+	rankQueryDocuments(queryDocs)
 
 	return queryDocs
+}
+
+// Rank / Sort query documents by len(tokens) and then by len(refs):w
+func rankQueryDocuments(queryDocs []QueryDocument) {
+
+	// set tokens from wordRef
+	for i := 0; i < len(queryDocs); i++ {
+		queryDocs[i].setTokens()
+	}
+
+	// sort (rank)
+	sort.Slice(queryDocs, func(i, j int) bool {
+		switch diff := len(queryDocs[i].tokens) - len(queryDocs[j].tokens); {
+		case diff > 0:
+			return true
+		case diff < 0:
+			return false
+		default:
+			return len(queryDocs[i].refs) > len(queryDocs[j].refs)
+
+		}
+	})
 }
 
 func queryDocument(docRefs []DocRef) []QueryDocument {
@@ -208,7 +241,10 @@ func queryDocument(docRefs []DocRef) []QueryDocument {
 		if !found {
 			queryDoc = QueryDocument{documentId: docRef.documentId, refs: make([]WordRef, 0, 10)}
 		}
-		queryDoc.refs = append(queryDoc.refs, WordRef{start: docRef.start, end: docRef.end})
+		queryDoc.refs = append(queryDoc.refs,
+			WordRef{start: docRef.start,
+				end:   docRef.end,
+				token: docRef.token})
 		queryDocs[documentId] = queryDoc
 	}
 	docs := make([]QueryDocument, 0, len(queryDocs))
@@ -231,7 +267,7 @@ func CreateIndex(documents []Document) Index {
 	}
 
 	log.Printf("Index ready")
-	return Index{tokenMap: tokenMap}
+	return Index{tokenMap: &tokenMap}
 }
 
 // add source entries to target map
@@ -348,6 +384,7 @@ func documentTokenMap(documentId string, tokens []Token) TokenMap {
 			docRefs = make([]DocRef, 0, 10)
 		}
 		docRefs = append(docRefs, DocRef{
+			token:      token.value,
 			documentId: documentId,
 			start:      token.start,
 			end:        token.end})

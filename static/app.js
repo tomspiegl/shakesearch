@@ -11,12 +11,16 @@ const Controller = {
   },
 
   updateTable: (results) => {
-    const table = document.getElementById("table-body");
+    const table = document.getElementById("search-results");
     const rows = [];
     for (let result of results) {
-      rows.push(`<tr>${result}<tr/>`);
+	let text = result.text
+	rows.push(`<div>`)
+      	rows.push(`<p><b>Title:&nbsp;${result.title}</b></p>`);
+      	rows.push(`<p>${text}</p>`);
+	rows.push(`</div>`)
     }
-    table.innerHTML = rows;
+    table.innerHTML = rows.join("\n");
   },
 };
 
