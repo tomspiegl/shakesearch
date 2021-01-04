@@ -12,7 +12,7 @@ In it's current state, however, the app is just a rough prototype. The search is
 case sensitive, the results are difficult to read, and the search is limited to
 exact matches.
 
-## Submission Improvements 
+## Improvements 
 
 You can see a live version of the improved ap at https://ts-shakesearch.herokuapp.com/.
 
@@ -33,14 +33,14 @@ You will see the following improvements:
 
 ### Indexer
 
-Index is an inverted map based alogorithm for fast full-text search based on tokens.
+[Index](./index.go) is an inverted map based alogorithm for fast full-text search based on tokens.
 
 The Index analyses documents as follows:
 1. tokenize documents (extract words)
 2. apply filters to each token
-2.1. lower case filter
-2.2. stopword filter (remove common words, see stopwords_en.txt)
-2.3. apply stemmer (normalize forms of the same word, e.g. fish, fishes -> fish)
+  2.1. lower case filter
+  2.2. stopword filter (remove common words, see stopwords_en.txt)
+  2.3. apply stemmer (normalize forms of the same word, e.g. fish, fishes -> fish)
 
 The index stores the output of the analyzer. The data structure is defined as follows:
 * Inverted Map: map[token] [] DocRef(*document, start, end) ]
@@ -51,6 +51,10 @@ A query against the index works as follows:
 2. lookup index for all analyzed tokens
 3. sort (rank) search results
 
+### Further Improvements
+
+* Support fuzzy search using a Radix Tree 
+* Fix document parser encoding
 
 ## Your Mission
 
