@@ -16,7 +16,7 @@ exact matches.
 
 You can see a live version of the improved ap at https://ts-shakesearch.herokuapp.com/.
 
-Try searching for "Nile gods the" to display s set of results.
+Try searching for "Nile gods the" to display a list of results.
 
 You will see the following improvements:
 * Ranked result list containing references to the search terms in Shakespeare's works
@@ -28,12 +28,12 @@ You will see the following improvements:
 [documents.go](./documents.go) does:
 
 * Read completeworks.txt
-* Find work start and end markers
+* Mark doucment start and end
 * Create a document for each of Shakespeare's works
 
 ### Indexer
 
-[Index](./index.go) implements an inverted map based alogorithm for fast full-text search. The index holds a list of word references for each token. 
+[Index](./index.go) implements an inverted map based alogorithm for fast full-text search. The index holds a list of word references within documents for each token. 
 
 Documents are indexed on startup of the application. The Index then provides two different query methods: 
 * Query(searchTerm string) []QueryDocument
