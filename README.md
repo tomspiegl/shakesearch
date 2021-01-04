@@ -6,7 +6,7 @@ the complete works of Shakespeare.
 
 You can see a live version of the app at
 https://pulley-shakesearch.herokuapp.com/. Try searching for "Hamlet" to display
-a set of results.
+a list of results.
 
 In it's current state, however, the app is just a rough prototype. The search is
 case sensitive, the results are difficult to read, and the search is limited to
@@ -19,21 +19,21 @@ You can see a live version of the improved ap at https://ts-shakesearch.herokuap
 Try searching for "Nile gods the" to display s set of results.
 
 You will see the following improvements:
-* a ranked result list containing references to the search terms in Shakespeare's works
-* stopwords like 'the' are ignored
-* multiple forms of the word 'god' are found
+* Ranked result list containing references to the search terms in Shakespeare's works
+* Stopwords like 'the' are ignored
+* Multiple forms of the word 'god' are found (God's, God, gods)
 
 ### Document Parser
 
 [documents.go](./documents.go) does:
 
-* read completeworks.txt
-* find work start / end markers
-* create a document for each of Shakespeare's works
+* Read completeworks.txt
+* Find work start and end markers
+* Create a document for each of Shakespeare's works
 
 ### Indexer
 
-[Index](./index.go) is an inverted map based alogorithm for fast full-text search based on tokens. The index holds a list of word references for each token. 
+[Index](./index.go) implements an inverted map based alogorithm for fast full-text search. The index holds a list of word references for each token. 
 
 Documents are indexed on startup of the application. The Index then provides two different query methods: 
 * Query(searchTerm string) []QueryDocument
@@ -42,20 +42,20 @@ Documents are indexed on startup of the application. The Index then provides two
 The concurrent query method splits the search term to multiple tokens. A concurrent lookup for each token is executed in different threads using goroutines.
 
 The Index analyses documents as follows:
-1. tokenize documents (extract words)
-2. apply filters to each token
-   - lower case filter
-   - stopword filter (remove common words, see stopwords_en.txt)
-   - apply stemmer (normalize forms of the same word, e.g. fish, fishes -> fish)
+1. Tokenize documents (extract words)
+2. Apply filters to each token
+   - Lower case filter
+   - Stopword filter (remove common words, see stopwords_en.txt)
+   - Apply stemmer (normalize forms of the same word, e.g. fish, fishes -> fish)
 
 The index stores the output of the analyzer. The data structure is defined as follows:
 * Inverted Map: map[token] [] DocRef(*document, start, end) ]
 * Reference to a word withn a document: DocRef(*document, start, end)
 
 A query against the index works as follows:
-1. analyze query term to get search tokens
-2. lookup index for all analyzed tokens
-3. sort (rank) search results
+1. Analyze query term to get search tokens
+2. Lookup index for all analyzed tokens
+3. Sort (rank) search results
 
 ### Further Improvements
 
