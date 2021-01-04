@@ -38,9 +38,9 @@ You will see the following improvements:
 The Index analyses documents as follows:
 1. tokenize documents (extract words)
 2. apply filters to each token
-   2.1. lower case filter
-   2.2. stopword filter (remove common words, see stopwords_en.txt)
-   2.3. apply stemmer (normalize forms of the same word, e.g. fish, fishes -> fish)
+   - lower case filter
+   - stopword filter (remove common words, see stopwords_en.txt)
+   - apply stemmer (normalize forms of the same word, e.g. fish, fishes -> fish)
 
 The index stores the output of the analyzer. The data structure is defined as follows:
 * Inverted Map: map[token] [] DocRef(*document, start, end) ]
